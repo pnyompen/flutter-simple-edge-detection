@@ -2,11 +2,13 @@ import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
 
-import 'package:camera/camera.dart';
-import 'package:simple_edge_detection/edge_detection.dart';
 import 'package:flutter/material.dart';
+
+import 'package:camera/camera.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:simple_edge_detection/edge_detection.dart';
+
 import 'package:simple_edge_detection_example/cropping_preview.dart';
 
 import 'camera_view.dart';
@@ -19,11 +21,11 @@ class Scan extends StatefulWidget {
 }
 
 class _ScanState extends State<Scan> {
-  CameraController controller;
-  List<CameraDescription> cameras;
-  String imagePath;
-  String croppedImagePath;
-  EdgeDetectionResult edgeDetectionResult;
+  CameraController? controller;
+  late List<CameraDescription> cameras;
+  String? imagePath;
+  String? croppedImagePath;
+  EdgeDetectionResult? edgeDetectionResult;
 
   @override
   void initState() {
@@ -47,17 +49,15 @@ class _ScanState extends State<Scan> {
 
   Widget _getMainWidget() {
     if (croppedImagePath != null) {
-      return ImageView(imagePath: croppedImagePath);
+      return ImageView(imagePath: croppedImagePath!);
     }
 
     if (imagePath == null && edgeDetectionResult == null) {
-      return CameraView(
-        controller: controller
-      );
+      return CameraView(controller: controller);
     }
 
     return ImagePreview(
-      imagePath: imagePath,
+      imagePath: imagePath!,
       edgeDetectionResult: edgeDetectionResult,
     );
   }
@@ -73,12 +73,9 @@ class _ScanState extends State<Scan> {
       return;
     }
 
-    controller = CameraController(
-        cameras[0],
-        ResolutionPreset.veryHigh,
-        enableAudio: false
-    );
-    controller.initialize().then((_) {
+    controller = CameraController(cameras[0], ResolutionPreset.veryHigh,
+        enableAudio: false);
+    controller!.initialize().then((_) {
       if (!mounted) {
         return;
       }
@@ -98,11 +95,10 @@ class _ScanState extends State<Scan> {
         alignment: Alignment.bottomCenter,
         child: FloatingActionButton(
           child: Icon(Icons.check),
-          onPressed: () {
+          onPressed: () async {
             if (croppedImagePath == null) {
-              return _processImage(
-                imagePath, edgeDetectionResult
-              );
+              await _processImage(imagePath!, edgeDetectionResult!);
+              return;
             }
 
             setState(() {
@@ -115,28 +111,25 @@ class _ScanState extends State<Scan> {
       );
     }
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        FloatingActionButton(
-          foregroundColor: Colors.white,
-          child: Icon(Icons.camera_alt),
-          onPressed: onTakePictureButtonPressed,
-        ),
-        SizedBox(width: 16),
-        FloatingActionButton(
-          foregroundColor: Colors.white,
-          child: Icon(Icons.image),
-          onPressed: _onGalleryButtonPressed,
-        ),
-      ]
-    );
+    return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+      FloatingActionButton(
+        foregroundColor: Colors.white,
+        child: Icon(Icons.camera_alt),
+        onPressed: onTakePictureButtonPressed,
+      ),
+      SizedBox(width: 16),
+      FloatingActionButton(
+        foregroundColor: Colors.white,
+        child: Icon(Icons.image),
+        onPressed: _onGalleryButtonPressed,
+      ),
+    ]);
   }
 
   String timestamp() => DateTime.now().millisecondsSinceEpoch.toString();
 
-  Future<String> takePicture() async {
-    if (!controller.value.isInitialized) {
+  Future<String?> takePicture() async {
+    if (controller == null || !controller!.value.isInitialized) {
       log('Error: select a camera first.');
       return null;
     }
@@ -144,14 +137,15 @@ class _ScanState extends State<Scan> {
     final Directory extDir = await getTemporaryDirectory();
     final String dirPath = '${extDir.path}/Pictures/flutter_test';
     await Directory(dirPath).create(recursive: true);
-    final String filePath = '$dirPath/${timestamp()}.jpg';
+    final String filePath;
 
-    if (controller.value.isTakingPicture) {
+    if (controller == null || controller!.value.isTakingPicture) {
       return null;
     }
 
     try {
-      await controller.takePicture(filePath);
+      final XFile imagePath = await controller!.takePicture();
+      filePath = imagePath.path;
     } on CameraException catch (e) {
       log(e.toString());
       return null;
@@ -159,7 +153,7 @@ class _ScanState extends State<Scan> {
     return filePath;
   }
 
-  Future _detectEdges(String filePath) async {
+  Future _detectEdges(String? filePath) async {
     if (!mounted || filePath == null) {
       return;
     }
@@ -175,12 +169,14 @@ class _ScanState extends State<Scan> {
     });
   }
 
-  Future _processImage(String filePath, EdgeDetectionResult edgeDetectionResult) async {
+  Future<void> _processImage(
+      String? filePath, EdgeDetectionResult edgeDetectionResult) async {
     if (!mounted || filePath == null) {
       return;
     }
 
-    bool result = await EdgeDetector().processImage(filePath, edgeDetectionResult);
+    bool result =
+        await EdgeDetector().processImage(filePath, edgeDetectionResult);
 
     if (result == false) {
       return;
@@ -194,7 +190,7 @@ class _ScanState extends State<Scan> {
   }
 
   void onTakePictureButtonPressed() async {
-    String filePath = await takePicture();
+    String? filePath = await takePicture();
 
     log('Picture saved to $filePath');
 
@@ -203,7 +199,11 @@ class _ScanState extends State<Scan> {
 
   void _onGalleryButtonPressed() async {
     ImagePicker picker = ImagePicker();
-    PickedFile pickedFile = await picker.getImage(source: ImageSource.gallery);
+    final XFile? pickedFile =
+        await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile == null) {
+      return;
+    }
     final filePath = pickedFile.path;
 
     log('Picture saved to $filePath');
@@ -213,11 +213,8 @@ class _ScanState extends State<Scan> {
 
   Padding _getBottomBar() {
     return Padding(
-      padding: EdgeInsets.only(bottom: 32),
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: _getButtonRow()
-      )
-    );
+        padding: EdgeInsets.only(bottom: 32),
+        child:
+            Align(alignment: Alignment.bottomCenter, child: _getButtonRow()));
   }
 }
