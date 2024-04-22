@@ -1,5 +1,6 @@
 name: simple_edge_detection
-description: A Flutter plugin enabling the user to detect edges of a given image. It returns the relative coordinates of the detection rectangle.
+description: A Flutter plugin enabling the user to detect edges of a given
+  image. It returns the relative coordinates of the detection rectangle.
 version: 0.0.1
 homepage: https://www.flutterclutter.dev
 
@@ -7,9 +8,10 @@ environment:
   sdk: '>=2.15.0 <4.0.0'
 
 dependencies:
+  ffi: ^1.0.0
   flutter:
     sdk: flutter
-  ffi: ^1.0.0
+  image: ^4.1.7
 
 dev_dependencies:
   flutter_test:

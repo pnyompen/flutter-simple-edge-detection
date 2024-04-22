@@ -6,6 +6,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import 'package:ffi/ffi.dart';
+import 'package:image/image.dart' as imglib;
 
 class Coordinate extends Struct {
   @Double()
@@ -49,10 +50,17 @@ class EdgeDetectionResult {
   Offset topRight;
   Offset bottomLeft;
   Offset bottomRight;
+
+  @override
+  String toString() {
+    return 'EdgeDetectionResult{topLeft: $topLeft, topRight: $topRight, bottomLeft: $bottomLeft, bottomRight: $bottomRight}';
+  }
 }
 
+typedef detect_edges_function = Pointer<NativeDetectionResult> Function(
+    Pointer<Uint8> imageData, Int32 width, Int32 height);
 typedef DetectEdgesFunction = Pointer<NativeDetectionResult> Function(
-    Pointer<Utf8> imagePath);
+    Pointer<Uint8> imageData, int width, int height);
 
 typedef process_image_function = Int8 Function(
     Pointer<Utf8> imagePath,
@@ -79,15 +87,29 @@ typedef ProcessImageFunction = int Function(
 // https://github.com/dart-lang/samples/blob/master/ffi/structs/structs.dart
 
 class EdgeDetection {
-  static Future<EdgeDetectionResult> detectEdges(String path) async {
+  static Future<EdgeDetectionResult> detectEdges(imglib.Image image) async {
     DynamicLibrary nativeEdgeDetection = _getDynamicLibrary();
 
     final detectEdges = nativeEdgeDetection
-        .lookup<NativeFunction<DetectEdgesFunction>>("detect_edges")
+        .lookup<NativeFunction<detect_edges_function>>("detect_edges")
         .asFunction<DetectEdgesFunction>();
 
+    // Convert the image to a byte array
+    var imageData = image.getBytes();
+
+    // Allocate memory for the image data
+    final imageDataPointer = calloc<Uint8>(imageData.length);
+
+    // Copy the image data to the allocated memory
+    for (var i = 0; i < imageData.length; i++) {
+      imageDataPointer[i] = imageData[i];
+    }
+
     NativeDetectionResult detectionResult =
-        detectEdges(path.toNativeUtf8()).ref;
+        detectEdges(imageDataPointer, image.width, image.height).ref;
+
+    // Don't forget to free the allocated memory
+    calloc.free(imageDataPointer);
 
     return EdgeDetectionResult(
         topLeft: Offset(

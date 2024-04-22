@@ -1,13 +1,22 @@
 import 'dart:async';
 import 'dart:isolate';
 
+import 'package:camera/camera.dart';
+import 'package:image/image.dart' as imglib;
+
 import 'package:simple_edge_detection/edge_detection.dart';
+import 'package:simple_edge_detection_example/camera_image_converter.dart';
 
 class EdgeDetector {
   static Future<void> startEdgeDetectionIsolate(
       EdgeDetectionInput edgeDetectionInput) async {
-    EdgeDetectionResult result =
-        await EdgeDetection.detectEdges(edgeDetectionInput.inputPath);
+    final imglib.Image image;
+    if (edgeDetectionInput.cameraImage != null) {
+      image = CameraImageConverter.convert(edgeDetectionInput.cameraImage!);
+    } else {
+      image = edgeDetectionInput.image!;
+    }
+    EdgeDetectionResult result = await EdgeDetection.detectEdges(image);
     edgeDetectionInput.sendPort.send(result);
   }
 
@@ -18,11 +27,21 @@ class EdgeDetector {
     processImageInput.sendPort.send(true);
   }
 
-  Future<EdgeDetectionResult> detectEdges(String filePath) async {
+  Future<EdgeDetectionResult> detectEdges(imglib.Image image) async {
     final port = ReceivePort();
 
     _spawnIsolate<EdgeDetectionInput>(startEdgeDetectionIsolate,
-        EdgeDetectionInput(inputPath: filePath, sendPort: port.sendPort), port);
+        EdgeDetectionInput(image: image, sendPort: port.sendPort), port);
+
+    return await _subscribeToPort<EdgeDetectionResult>(port);
+  }
+
+  Future<EdgeDetectionResult> detectEdgesFromCameraImage(
+      CameraImage image) async {
+    final port = ReceivePort();
+
+    _spawnIsolate<EdgeDetectionInput>(startEdgeDetectionIsolate,
+        EdgeDetectionInput(cameraImage: image, sendPort: port.sendPort), port);
 
     return await _subscribeToPort<EdgeDetectionResult>(port);
   }
@@ -63,9 +82,14 @@ class EdgeDetector {
 }
 
 class EdgeDetectionInput {
-  EdgeDetectionInput({required this.inputPath, required this.sendPort});
+  EdgeDetectionInput({this.image, this.cameraImage, required this.sendPort}) {
+    if (image == null && cameraImage == null) {
+      throw ArgumentError('Either image or cameraImage must be provided');
+    }
+  }
 
-  String inputPath;
+  imglib.Image? image;
+  CameraImage? cameraImage;
   SendPort sendPort;
 }
 

@@ -19,8 +19,7 @@ struct ProcessingInput
     DetectionResult detectionResult;
 };
 
-extern "C"
-struct DetectionResult *detect_edges(char *str);
+extern "C" struct DetectionResult *detect_edges(uint8_t *data, int32_t width, int32_t height);
 
 extern "C"
 bool process_image(

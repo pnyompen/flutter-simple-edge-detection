@@ -1,8 +1,9 @@
+#include <stdint.h>
+#include <stdlib.h>
+#include <opencv2/opencv.hpp>
 #include "native_edge_detection.hpp"
 #include "edge_detector.hpp"
 #include "image_processor.hpp"
-#include <stdlib.h>
-#include <opencv2/opencv.hpp>
 
 
 extern "C" __attribute__((visibility("default"))) __attribute__((used))
@@ -25,10 +26,10 @@ struct DetectionResult *create_detection_result(Coordinate *topLeft, Coordinate 
     return detectionResult;
 }
 
-extern "C" __attribute__((visibility("default"))) __attribute__((used))
-struct DetectionResult *detect_edges(char *str) {
+extern "C" __attribute__((visibility("default"))) __attribute__((used)) struct DetectionResult *detect_edges(uint8_t *data, int32_t width, int32_t height)
+{
     struct DetectionResult *coordinate = (struct DetectionResult *)malloc(sizeof(struct DetectionResult));
-    cv::Mat mat = cv::imread(str);
+    cv::Mat mat(height, width, CV_8UC3, data); // Assuming the image is in RGB format
 
     if (mat.size().width == 0 || mat.size().height == 0) {
         return create_detection_result(
@@ -63,7 +64,7 @@ bool process_image(
 ) {
     cv::Mat mat = cv::imread(path);
 
-    cv::Mat resizedMat = ImageProcessor::process_image(
+    cv::Mat resizedMat = ImageProcessor::crop_and_transform(
         mat,
         topLeftX * mat.size().width,
         topLeftY * mat.size().height,

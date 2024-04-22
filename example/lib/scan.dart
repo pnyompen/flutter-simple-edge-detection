@@ -2,14 +2,17 @@ import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:camera/camera.dart';
+import 'package:image/image.dart' as imglib;
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:simple_edge_detection/edge_detection.dart';
 
+import 'package:simple_edge_detection/edge_detection.dart';
 import 'package:simple_edge_detection_example/cropping_preview.dart';
+import 'package:simple_edge_detection_example/edge_detection_shape/edge_detection_shape.dart';
 
 import 'camera_view.dart';
 import 'edge_detector.dart';
@@ -26,6 +29,8 @@ class _ScanState extends State<Scan> {
   String? imagePath;
   String? croppedImagePath;
   EdgeDetectionResult? edgeDetectionResult;
+  EdgeDetectionResult? liveEdgeDetectionResult;
+  bool _isProcessing = false;
 
   @override
   void initState() {
@@ -53,7 +58,31 @@ class _ScanState extends State<Scan> {
     }
 
     if (imagePath == null && edgeDetectionResult == null) {
-      return CameraView(controller: controller);
+      return Stack(
+        children: [
+          CameraView(controller: controller),
+          if (liveEdgeDetectionResult != null)
+            LayoutBuilder(builder: (context, constraints) {
+              final double width = constraints.maxWidth;
+              final double height =
+                  constraints.maxWidth * controller!.value.aspectRatio;
+              return Stack(
+                children: [
+                  Padding(
+                      padding: EdgeInsets.symmetric(
+                        vertical: (constraints.maxHeight - height) / 2,
+                        horizontal: (constraints.maxWidth - width) / 2,
+                      ),
+                      child: EdgeDetectionShape(
+                        originalImageSize: Size(width, height),
+                        renderedImageSize: Size(width, height),
+                        edgeDetectionResult: liveEdgeDetectionResult!,
+                      )),
+                ],
+              );
+            })
+        ],
+      );
     }
 
     return ImagePreview(
@@ -73,13 +102,15 @@ class _ScanState extends State<Scan> {
       return;
     }
 
-    controller = CameraController(cameras[0], ResolutionPreset.veryHigh,
+    controller = CameraController(cameras[0], ResolutionPreset.medium,
         enableAudio: false);
     controller!.initialize().then((_) {
       if (!mounted) {
         return;
       }
       setState(() {});
+      controller!.setFlashMode(FlashMode.off);
+      controller!.startImageStream(onCameraImageReceived);
     });
   }
 
@@ -87,6 +118,26 @@ class _ScanState extends State<Scan> {
   void dispose() {
     controller?.dispose();
     super.dispose();
+  }
+
+  Future<void> onCameraImageReceived(CameraImage cameraImage) async {
+    if (_isProcessing) {
+      return;
+    }
+    try {
+      final s = Stopwatch()..start();
+      _isProcessing = true;
+      liveEdgeDetectionResult =
+          await EdgeDetector().detectEdgesFromCameraImage(cameraImage);
+      s.stop();
+      print('Edge detection took: ${s.elapsedMilliseconds}ms');
+      await Future.delayed(Duration(milliseconds: 100));
+      setState(() {});
+    } catch (e) {
+      print(e);
+    } finally {
+      _isProcessing = false;
+    }
   }
 
   Widget _getButtonRow() {
@@ -154,6 +205,8 @@ class _ScanState extends State<Scan> {
   }
 
   Future _detectEdges(String? filePath) async {
+    print('Detecting edges...');
+    print(filePath);
     if (!mounted || filePath == null) {
       return;
     }
@@ -162,7 +215,10 @@ class _ScanState extends State<Scan> {
       imagePath = filePath;
     });
 
-    EdgeDetectionResult result = await EdgeDetector().detectEdges(filePath);
+    final imglib.Image image =
+        imglib.decodeImage(File(filePath).readAsBytesSync())!;
+    EdgeDetectionResult result = await EdgeDetector().detectEdges(image);
+    print('Edge detection result: $result');
 
     setState(() {
       edgeDetectionResult = result;

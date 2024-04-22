@@ -44,6 +44,13 @@ class _EdgeDetectionShapeState extends State<EdgeDetectionShape> {
   }
 
   @override
+  void didUpdateWidget(covariant EdgeDetectionShape oldWidget) {
+    edgeDetectionResult = widget.edgeDetectionResult;
+    _calculateDimensionValues();
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
   void initState() {
     edgeDetectionResult = widget.edgeDetectionResult;
     _calculateDimensionValues();
