@@ -47,5 +47,9 @@
     <string>This app needs a microphone</string>
     <key>NSPhotoLibraryUsageDescription</key>
     <string>This app needs the image gallery</string>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
 </dict>
 </plist>

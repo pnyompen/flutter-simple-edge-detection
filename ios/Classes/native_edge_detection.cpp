@@ -28,15 +28,16 @@ struct DetectionResult *create_detection_result(Coordinate *topLeft, Coordinate 
 
 extern "C" __attribute__((visibility("default"))) __attribute__((used)) struct DetectionResult *detect_edges(uint8_t *data, int32_t width, int32_t height)
 {
+    // 検出に失敗したああ場合は、座標を0に設定する
     struct DetectionResult *coordinate = (struct DetectionResult *)malloc(sizeof(struct DetectionResult));
     cv::Mat mat(height, width, CV_8UC3, data); // Assuming the image is in RGB format
 
     if (mat.size().width == 0 || mat.size().height == 0) {
         return create_detection_result(
             create_coordinate(0, 0),
-            create_coordinate(1, 0),
-            create_coordinate(0, 1),
-            create_coordinate(1, 1)
+            create_coordinate(0, 0),
+            create_coordinate(0, 0),
+            create_coordinate(0, 0)
         );
     }
 

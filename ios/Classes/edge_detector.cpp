@@ -78,7 +78,11 @@ vector<cv::Point> EdgeDetector::detect_edges(Mat& image)
     }
 
     if (biggestSquare == NULL) {
-        return image_to_vector(image);
+        return {
+            cv::Point(0, 0),
+            cv::Point(0, 0),
+            cv::Point(0, 0),
+            cv::Point(0, 0)};
     }
 
     std::sort(biggestSquare->begin(),biggestSquare->end(), orderRectangleY);

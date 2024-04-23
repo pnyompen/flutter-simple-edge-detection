@@ -87,7 +87,7 @@ typedef ProcessImageFunction = int Function(
 // https://github.com/dart-lang/samples/blob/master/ffi/structs/structs.dart
 
 class EdgeDetection {
-  static Future<EdgeDetectionResult> detectEdges(imglib.Image image) async {
+  static Future<EdgeDetectionResult?> detectEdges(imglib.Image image) async {
     DynamicLibrary nativeEdgeDetection = _getDynamicLibrary();
 
     final detectEdges = nativeEdgeDetection
@@ -110,6 +110,17 @@ class EdgeDetection {
 
     // Don't forget to free the allocated memory
     calloc.free(imageDataPointer);
+
+    if (detectionResult.topLeft.ref.x == 0 &&
+        detectionResult.topLeft.ref.y == 0 &&
+        detectionResult.topRight.ref.x == 0 &&
+        detectionResult.topRight.ref.y == 0 &&
+        detectionResult.bottomLeft.ref.x == 0 &&
+        detectionResult.bottomLeft.ref.y == 0 &&
+        detectionResult.bottomRight.ref.x == 0 &&
+        detectionResult.bottomRight.ref.y == 0) {
+      return null;
+    }
 
     return EdgeDetectionResult(
         topLeft: Offset(

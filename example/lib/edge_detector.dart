@@ -16,7 +16,7 @@ class EdgeDetector {
     } else {
       image = edgeDetectionInput.image!;
     }
-    EdgeDetectionResult result = await EdgeDetection.detectEdges(image);
+    EdgeDetectionResult? result = await EdgeDetection.detectEdges(image);
     edgeDetectionInput.sendPort.send(result);
   }
 
@@ -36,14 +36,14 @@ class EdgeDetector {
     return await _subscribeToPort<EdgeDetectionResult>(port);
   }
 
-  Future<EdgeDetectionResult> detectEdgesFromCameraImage(
+  Future<EdgeDetectionResult?> detectEdgesFromCameraImage(
       CameraImage image) async {
     final port = ReceivePort();
 
     _spawnIsolate<EdgeDetectionInput>(startEdgeDetectionIsolate,
         EdgeDetectionInput(cameraImage: image, sendPort: port.sendPort), port);
 
-    return await _subscribeToPort<EdgeDetectionResult>(port);
+    return await _subscribeToPort<EdgeDetectionResult?>(port);
   }
 
   Future<bool> processImage(
