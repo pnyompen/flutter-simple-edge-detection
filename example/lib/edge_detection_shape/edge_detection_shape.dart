@@ -138,8 +138,9 @@ class _EdgeDetectionShapeState extends State<EdgeDetectionShape> {
                       currentDragPosition = Offset(points[0].dx, points[0].dy);
                       Offset newTopLeft = _getNewPositionAfterDrag(
                           position, renderedImageWidth, renderedImageHeight);
-                      edgeDetectionResult.topLeft = _clampOffset(
-                          edgeDetectionResult.topLeft + newTopLeft);
+                      edgeDetectionResult = edgeDetectionResult.copyWith(
+                          topLeft: _clampOffset(
+                              edgeDetectionResult.topLeft + newTopLeft));
                     });
                   },
                   onDragFinished: onDragFinished),
@@ -152,8 +153,9 @@ class _EdgeDetectionShapeState extends State<EdgeDetectionShape> {
                     setState(() {
                       Offset newTopRight = _getNewPositionAfterDrag(
                           position, renderedImageWidth, renderedImageHeight);
-                      edgeDetectionResult.topRight = _clampOffset(
-                          edgeDetectionResult.topRight + newTopRight);
+                      edgeDetectionResult = edgeDetectionResult.copyWith(
+                          topRight: _clampOffset(
+                              edgeDetectionResult.topRight + newTopRight));
                       currentDragPosition = Offset(points[1].dx, points[1].dy);
                     });
                   },
@@ -167,8 +169,10 @@ class _EdgeDetectionShapeState extends State<EdgeDetectionShape> {
                     setState(() {
                       Offset newBottomRight = _getNewPositionAfterDrag(
                           position, renderedImageWidth, renderedImageHeight);
-                      edgeDetectionResult.bottomRight = _clampOffset(
-                          edgeDetectionResult.bottomRight + newBottomRight);
+                      edgeDetectionResult = edgeDetectionResult.copyWith(
+                          bottomRight: _clampOffset(
+                              edgeDetectionResult.bottomRight +
+                                  newBottomRight));
                       currentDragPosition = Offset(points[2].dx, points[2].dy);
                     });
                   },
@@ -182,8 +186,9 @@ class _EdgeDetectionShapeState extends State<EdgeDetectionShape> {
                     setState(() {
                       Offset newBottomLeft = _getNewPositionAfterDrag(
                           position, renderedImageWidth, renderedImageHeight);
-                      edgeDetectionResult.bottomLeft = _clampOffset(
-                          edgeDetectionResult.bottomLeft + newBottomLeft);
+                      edgeDetectionResult = edgeDetectionResult.copyWith(
+                          bottomLeft: _clampOffset(
+                              edgeDetectionResult.bottomLeft + newBottomLeft));
                       currentDragPosition = Offset(points[3].dx, points[3].dy);
                     });
                   },
