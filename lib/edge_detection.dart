@@ -46,14 +46,78 @@ class EdgeDetectionResult {
     required this.bottomRight,
   });
 
-  Offset topLeft;
-  Offset topRight;
-  Offset bottomLeft;
-  Offset bottomRight;
+  final Offset topLeft;
+  final Offset topRight;
+  final Offset bottomLeft;
+  final Offset bottomRight;
+
+  EdgeDetectionResult copyWith({
+    Offset? topLeft,
+    Offset? topRight,
+    Offset? bottomLeft,
+    Offset? bottomRight,
+  }) {
+    return EdgeDetectionResult(
+      topLeft: topLeft ?? this.topLeft,
+      topRight: topRight ?? this.topRight,
+      bottomLeft: bottomLeft ?? this.bottomLeft,
+      bottomRight: bottomRight ?? this.bottomRight,
+    );
+  }
+
+  EdgeDetectionResult copy() {
+    return EdgeDetectionResult(
+      topLeft: topLeft,
+      topRight: topRight,
+      bottomLeft: bottomLeft,
+      bottomRight: bottomRight,
+    );
+  }
+
+  EdgeDetectionResult updateOffsetByIndex(int index, Offset offset) {
+    switch (index) {
+      case 0:
+        return copyWith(topLeft: offset);
+      case 1:
+        return copyWith(topRight: offset);
+      case 2:
+        return copyWith(bottomRight: offset);
+      case 3:
+        return copyWith(bottomLeft: offset);
+      default:
+        throw Exception('Invalid index');
+    }
+  }
+
+  Offset getOffsetByIndex(int index) {
+    switch (index) {
+      case 0:
+        return topLeft;
+      case 1:
+        return topRight;
+      case 2:
+        return bottomRight;
+      case 3:
+        return bottomLeft;
+      default:
+        throw Exception('Invalid index');
+    }
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is EdgeDetectionResult &&
+        other.topLeft == topLeft &&
+        other.topRight == topRight &&
+        other.bottomLeft == bottomLeft &&
+        other.bottomRight == bottomRight;
+  }
 
   @override
   String toString() {
-    return 'EdgeDetectionResult{topLeft: $topLeft, topRight: $topRight, bottomLeft: $bottomLeft, bottomRight: $bottomRight}';
+    return 'EdgeDetectionResult{$topLeft, $topRight, $bottomLeft, $bottomRight}';
   }
 }
 
