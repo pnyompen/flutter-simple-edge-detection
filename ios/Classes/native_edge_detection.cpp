@@ -41,6 +41,7 @@ extern "C" __attribute__((visibility("default"))) __attribute__((used)) struct D
         );
     }
 
+
     vector<cv::Point> points = EdgeDetector::detect_edges(mat);
 
     return create_detection_result(

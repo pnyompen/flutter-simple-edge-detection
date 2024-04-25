@@ -131,6 +131,8 @@ vector<vector<cv::Point> > EdgeDetector::find_squares(Mat& image)
     Mat gray0(image.size(), CV_8U), gray;
 
     cvtColor(image , gray, COLOR_BGR2GRAY);
+    // CLAHEを適用
+    EdgeDetector::apply_CLAHE(gray, gray);
     medianBlur(gray, gray, 3);      // blur will enhance edge detection
     vector<vector<cv::Point> > contours;
 
@@ -164,4 +166,26 @@ vector<vector<cv::Point> > EdgeDetector::find_squares(Mat& image)
     }
 
     return squares;
+}
+
+void EdgeDetector::apply_CLAHE(cv::Mat &src, cv::Mat &dst)
+{
+    // グレースケール画像へ変換（必要な場合）
+    cv::Mat gray;
+    if (src.channels() == 3)
+    {
+        cvtColor(src, gray, COLOR_BGR2GRAY);
+    }
+    else
+    {
+        gray = src.clone();
+    }
+
+    // CLAHEオブジェクトの生成
+    Ptr<CLAHE> clahe = createCLAHE();
+    clahe->setClipLimit(2.0);            // クリップリミットの設定
+    clahe->setTilesGridSize(Size(8, 8)); // タイルのグリッドサイズを設定
+
+    // CLAHEを適用
+    clahe->apply(gray, dst);
 }
