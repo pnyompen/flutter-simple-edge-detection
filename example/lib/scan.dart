@@ -129,7 +129,7 @@ class _ScanState extends State<Scan> {
       liveEdgeDetectionResult =
           await EdgeDetector().detectEdgesFromCameraImage(cameraImage);
       s.stop();
-      print('Edge detection took: ${s.elapsedMilliseconds}ms');
+      print('result: $liveEdgeDetectionResult');
       await Future.delayed(Duration(milliseconds: 100));
       setState(() {});
     } catch (e) {

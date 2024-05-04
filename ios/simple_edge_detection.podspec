@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'simple_edge_detection'
-  s.version          = '0.0.1'
+  s.version          = '1.0.0'
   s.summary          = 'A Flutter plugin enabling the user to detect edges of a given image. It returns the relative coordinates of the detection rectangle.'
   s.description      = <<-DESC
 A new flutter plugin project.

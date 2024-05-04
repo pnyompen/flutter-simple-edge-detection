@@ -133,10 +133,10 @@ vector<vector<cv::Point> > EdgeDetector::find_squares(Mat& image)
     cvtColor(image , gray, COLOR_BGR2GRAY);
     // CLAHEを適用
     EdgeDetector::apply_CLAHE(gray, gray);
-    medianBlur(gray, gray, 3);      // blur will enhance edge detection
+    medianBlur(gray, gray, 5);      // blur will enhance edge detection
     vector<vector<cv::Point> > contours;
 
-    int thresholdLevels[] = {10, 30, 50, 70};
+    int thresholdLevels[] = {10, 30, 50, 70, 90, 110};
     for(int thresholdLevel : thresholdLevels) {
         Canny(gray, gray0, thresholdLevel, thresholdLevel*3, 3);
 

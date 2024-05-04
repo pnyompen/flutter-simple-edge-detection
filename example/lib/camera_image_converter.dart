@@ -63,11 +63,22 @@ class CameraImageConverter {
 
   /// Converts a [CameraImage] in BGRA888 format to [imglib.Image] in RGB format
   static imglib.Image convertBGRA(CameraImage cameraImage) {
-    imglib.Image img = imglib.Image.fromBytes(
-        width: cameraImage.planes[0].width!.toInt(),
-        height: cameraImage.planes[0].height!.toInt(),
-        bytes: cameraImage.planes[0].bytes.buffer,
-        format: imglib.Format.uint8);
-    return img;
+    final width = cameraImage.width;
+    final height = cameraImage.height;
+    final bgra = cameraImage.planes[0].bytes;
+    final rgb = imglib.Image(width: width, height: height); // 新しいRGB画像を作成
+
+    // BGRAからRGBへの変換プロセス
+    for (int i = 0, len = width * height; i < len; i++) {
+      final bIndex = i * 4;
+      final r = bgra[bIndex + 2];
+      final g = bgra[bIndex + 1];
+      final b = bgra[bIndex];
+
+      // setPixelはRGBAの値を受け取りますが、Aは255（不透明）で固定されます。
+      rgb.setPixelRgba(i % width, i ~/ width, r, g, b, 255);
+    }
+
+    return rgb;
   }
 }
