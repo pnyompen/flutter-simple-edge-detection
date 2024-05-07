@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:isolate';
 
+import 'package:flutter/foundation.dart';
+
 import 'package:camera/camera.dart';
 import 'package:image/image.dart' as imglib;
 
@@ -44,6 +46,10 @@ class EdgeDetector {
         EdgeDetectionInput(cameraImage: image, sendPort: port.sendPort), port);
 
     return await _subscribeToPort<EdgeDetectionResult?>(port);
+  }
+
+  Future<imglib.Image> debugSquares(imglib.Image image) async {
+    return await compute(EdgeDetection.debugSquares, image);
   }
 
   Future<bool> processImage(

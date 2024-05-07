@@ -108,19 +108,30 @@ float EdgeDetector::get_width(vector<cv::Point>& square) {
 
 cv::Mat EdgeDetector::debug_squares( cv::Mat image )
 {
-    vector<vector<cv::Point> > squares = find_squares(image);
 
+    Mat gray0(image.size(), CV_8U), gray;
+    cvtColor(image, gray, COLOR_BGR2GRAY);
+    // CLAHEを適用
+    // EdgeDetector::apply_CLAHE(gray, gray);
+    medianBlur(gray, gray, 11); // blur will enhance edge detection
+    int thresholdLevel = 130;
+    Canny(gray, gray0, thresholdLevel, thresholdLevel * 3, 3);
+    dilate(gray0, gray0, Mat(), Point(-1, -1));
+
+    cvtColor(gray0, gray0, COLOR_GRAY2BGR);
+
+    vector<vector<cv::Point>> squares = find_squares(image);
     for (const auto & square : squares) {
         // draw rotated rect
         cv::RotatedRect minRect = minAreaRect(cv::Mat(square));
         cv::Point2f rect_points[4];
         minRect.points( rect_points );
         for ( int j = 0; j < 4; j++ ) {
-            cv::line( image, rect_points[j], rect_points[(j+1)%4], cv::Scalar(0,0,255), 1, 8 ); // blue
+            cv::line(gray0, rect_points[j], rect_points[(j + 1) % 4], cv::Scalar(255, 0, 0), 1, 8); // blue
         }
     }
 
-    return image;
+    return gray0;
 }
 
 vector<vector<cv::Point> > EdgeDetector::find_squares(Mat& image)
@@ -128,38 +139,41 @@ vector<vector<cv::Point> > EdgeDetector::find_squares(Mat& image)
     vector<int> usedThresholdLevel;
     vector<vector<Point> > squares;
 
-    Mat gray0(image.size(), CV_8U), gray;
+    Mat bluredImage(image.size(), CV_8U), edgeImage(image.size(), CV_8U), gray;
 
     cvtColor(image , gray, COLOR_BGR2GRAY);
-    // CLAHEを適用
-    EdgeDetector::apply_CLAHE(gray, gray);
-    medianBlur(gray, gray, 5);      // blur will enhance edge detection
+    // CLAHEを適用すると精度が低下するから削除
+    // EdgeDetector::apply_CLAHE(gray, gray);
     vector<vector<cv::Point> > contours;
 
-    int thresholdLevels[] = {10, 30, 50, 70, 90, 110};
-    for(int thresholdLevel : thresholdLevels) {
-        Canny(gray, gray0, thresholdLevel, thresholdLevel*3, 3);
+    int blurLevels[] = {5, 11, 15, 21};
+    int thresholdLevels[] = {50, 70, 90, 110, 130};
+    for (int blurLevel : blurLevels) {
+        medianBlur(gray, bluredImage, blurLevel); // blur will enhance edge detection
+        for(int thresholdLevel : thresholdLevels) {
+            Canny(bluredImage, edgeImage, thresholdLevel, thresholdLevel * 3, 3);
 
-        dilate(gray0, gray0, Mat(), Point(-1, -1));
+            dilate(edgeImage, edgeImage, Mat(), Point(-1, -1));
 
-        findContours(gray0, contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
+            findContours(edgeImage, contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
 
-        vector<Point> approx;
-        for (const auto & contour : contours) {
-            approxPolyDP(Mat(contour), approx, arcLength(Mat(contour), true) * 0.02, true);
+            vector<Point> approx;
+            for (const auto & contour : contours) {
+                approxPolyDP(Mat(contour), approx, arcLength(Mat(contour), true) * 0.02, true);
 
-            if (approx.size() == 4 && fabs(contourArea(Mat(approx))) > 1000 &&
-                isContourConvex(Mat(approx))) {
-                double maxCosine = 0;
+                if (approx.size() == 4 && fabs(contourArea(Mat(approx))) > 1000 &&
+                    isContourConvex(Mat(approx))) {
+                    double maxCosine = 0;
 
-                for (int j = 2; j < 5; j++) {
-                    double cosine = fabs(get_cosine_angle_between_vectors(approx[j % 4], approx[j - 2], approx[j - 1]));
-                    maxCosine = MAX(maxCosine, cosine);
-                }
+                    for (int j = 2; j < 5; j++) {
+                        double cosine = fabs(get_cosine_angle_between_vectors(approx[j % 4], approx[j - 2], approx[j - 1]));
+                        maxCosine = MAX(maxCosine, cosine);
+                    }
 
-                if (maxCosine < 0.3) {
-                    squares.push_back(approx);
-                    usedThresholdLevel.push_back(thresholdLevel);
+                    if (maxCosine < 0.3) {
+                        squares.push_back(approx);
+                        usedThresholdLevel.push_back(thresholdLevel);
+                    }
                 }
             }
         }

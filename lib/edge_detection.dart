@@ -121,10 +121,23 @@ class EdgeDetectionResult {
   }
 }
 
+class DebugSquaresResult extends Struct {
+  external Pointer<Uint8> data;
+  @Int32()
+  external int width;
+  @Int32()
+  external int height;
+}
+
 typedef detect_edges_function = Pointer<NativeDetectionResult> Function(
     Pointer<Uint8> imageData, Int32 width, Int32 height);
 typedef DetectEdgesFunction = Pointer<NativeDetectionResult> Function(
     Pointer<Uint8> imageData, int width, int height);
+
+typedef debug_squares_func = Pointer<DebugSquaresResult> Function(
+    Pointer<Uint8> data, Int32 width, Int32 height);
+typedef DebugSquaresFunc = Pointer<DebugSquaresResult> Function(
+    Pointer<Uint8> data, int width, int height);
 
 typedef process_image_function = Int8 Function(
     Pointer<Utf8> imagePath,
@@ -216,6 +229,41 @@ class EdgeDetection {
             result.bottomRight.dx,
             result.bottomRight.dy) ==
         1;
+  }
+
+  static Future<imglib.Image> debugSquares(imglib.Image image) async {
+    DynamicLibrary nativeEdgeDetection = _getDynamicLibrary();
+    final debugSquares = nativeEdgeDetection
+        .lookup<NativeFunction<debug_squares_func>>("debug_squares")
+        .asFunction<DebugSquaresFunc>();
+
+    // Convert the image to a byte array
+    var imageData = image.getBytes();
+
+    // Allocate memory for the image data
+    final imageDataPointer = calloc<Uint8>(imageData.length);
+
+    // Copy the image data to the allocated memory
+    for (var i = 0; i < imageData.length; i++) {
+      imageDataPointer[i] = imageData[i];
+    }
+
+    // Call the native function
+    final resultPointer =
+        debugSquares(imageDataPointer, image.width, image.height);
+
+    // Convert the result back to an Image
+    final resultBytes = resultPointer.ref.data
+        .asTypedList(resultPointer.ref.width * resultPointer.ref.height * 4);
+    final resultImage = imglib.Image.fromBytes(
+        width: resultPointer.ref.width,
+        height: resultPointer.ref.height,
+        bytes: resultBytes.buffer);
+
+    // Don't forget to free the allocated memory
+    calloc.free(imageDataPointer);
+
+    return resultImage;
   }
 
   static DynamicLibrary _getDynamicLibrary() {

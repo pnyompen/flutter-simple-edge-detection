@@ -10,7 +10,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:simple_edge_detection/edge_detection.dart';
+import 'package:simple_edge_detection_example/camera_image_converter.dart';
 import 'package:simple_edge_detection_example/cropping_preview.dart';
+import 'package:simple_edge_detection_example/edge_detection_preview.dart';
 import 'package:simple_edge_detection_example/edge_detection_shape/edge_detection_shape.dart';
 
 import 'camera_view.dart';
@@ -30,6 +32,7 @@ class _ScanState extends State<Scan> {
   EdgeDetectionResult? edgeDetectionResult;
   EdgeDetectionResult? liveEdgeDetectionResult;
   bool _isProcessing = false;
+  imglib.Image? imageForDebugging;
 
   @override
   void initState() {
@@ -72,14 +75,20 @@ class _ScanState extends State<Scan> {
                         vertical: (constraints.maxHeight - height) / 2,
                         horizontal: (constraints.maxWidth - width) / 2,
                       ),
-                      child: EdgeDetectionShape(
-                        originalImageSize: Size(width, height),
-                        renderedImageSize: Size(width, height),
+                      child: EdgeDetectionPreview(
                         edgeDetectionResult: liveEdgeDetectionResult!,
                       )),
                 ],
               );
-            })
+            }),
+          if (imageForDebugging != null)
+            Positioned(
+                top: 0,
+                right: 0,
+                child: Container(
+                    width: 200,
+                    height: 200,
+                    child: Image.memory(imglib.encodeBmp(imageForDebugging!)))),
         ],
       );
     }
@@ -128,6 +137,8 @@ class _ScanState extends State<Scan> {
       _isProcessing = true;
       liveEdgeDetectionResult =
           await EdgeDetector().detectEdgesFromCameraImage(cameraImage);
+      final image = CameraImageConverter.convert(cameraImage);
+      imageForDebugging = await EdgeDetector().debugSquares(image);
       s.stop();
       print('result: $liveEdgeDetectionResult');
       await Future.delayed(Duration(milliseconds: 100));

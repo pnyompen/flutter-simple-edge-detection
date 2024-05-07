@@ -26,7 +26,8 @@ struct DetectionResult *create_detection_result(Coordinate *topLeft, Coordinate 
     return detectionResult;
 }
 
-extern "C" __attribute__((visibility("default"))) __attribute__((used)) struct DetectionResult *detect_edges(uint8_t *data, int32_t width, int32_t height)
+extern "C" __attribute__((visibility("default"))) __attribute__((used))
+struct DetectionResult *detect_edges(uint8_t *data, int32_t width, int32_t height)
 {
     // 検出に失敗したああ場合は、座標を0に設定する
     struct DetectionResult *coordinate = (struct DetectionResult *)malloc(sizeof(struct DetectionResult));
@@ -50,6 +51,26 @@ extern "C" __attribute__((visibility("default"))) __attribute__((used)) struct D
         create_coordinate((double)points[2].x / mat.size().width, (double)points[2].y / mat.size().height),
         create_coordinate((double)points[3].x / mat.size().width, (double)points[3].y / mat.size().height)
     );
+}
+
+extern "C" __attribute__((visibility("default"))) __attribute__((used))
+struct DebugSquaresResult *debug_squares(uint8_t *data, int32_t width, int32_t height)
+{
+    cv::Mat mat(height, width, CV_8UC3, data); // Assuming the image is in RGB format
+
+    if (mat.size().width == 0 || mat.size().height == 0) {
+        return NULL;
+    }
+
+    cv::Mat debugMat = EdgeDetector::debug_squares(mat);
+
+    struct DebugSquaresResult *result = (struct DebugSquaresResult *)malloc(sizeof(struct DebugSquaresResult));
+    result->width = debugMat.size().width;
+    result->height = debugMat.size().height;
+    result->data = (uint8_t *)malloc(debugMat.total() * debugMat.elemSize());
+    memcpy(result->data, debugMat.data, debugMat.total() * debugMat.elemSize());
+
+    return result;
 }
 
 extern "C" __attribute__((visibility("default"))) __attribute__((used))
